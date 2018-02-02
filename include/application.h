@@ -10,5 +10,5 @@
 // Status enum
 #include "ntstatus.h"
 
-// Global Items
-PBL_FIRMWARE_DESCRIPTOR g_ptrBlFirmwareDescriptor;
+// Exports
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);

@@ -33,7 +33,11 @@ NTSTATUS BlApplicationEntry(
 	// Do what ever you want now
 	if (FirmwareDescriptor->SystemTable)
 	{
-		FirmwareDescriptor->SystemTable->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+		EFI_STATUS status = efi_main(FirmwareDescriptor->ImageHandle, FirmwareDescriptor->SystemTable);
+		if (status == EFI_SUCCESS)
+		{
+			FirmwareDescriptor->SystemTable->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+		}
 	}
 
 	// Do nothing right now

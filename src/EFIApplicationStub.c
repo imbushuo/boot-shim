@@ -20,15 +20,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	*   %V       Set output attribute to green color
 	*   %r       Human readable version of a status code
 	*/
-	Print(L"\n%H*** UEFI:SIMPLE ***%N\n\n");
+	Print(L"\n%H*** ~ Never gonna give up up ~ ***%N\n");
+	Print(L"*** ~ Never gonna let you down ~ ***\n\n");
 
-	Print(L"%EPress any key to exit.%N\n");
-	SystemTable->ConIn->Reset(SystemTable->ConIn, FALSE);
-	SystemTable->BootServices->WaitForEvent(1, &SystemTable->ConIn->WaitForKey, &Event);
-#if defined(_DEBUG)
-	// If running in debug mode, use the EFI shut down call to close QEMU
-	SystemTable->RuntimeServices->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
-#endif
+	Print(L"%E This device will restart in 30 seconds. %N\n");
+	SystemTable->BootServices->Stall(30000000);
 
 	return EFI_SUCCESS;
 }
