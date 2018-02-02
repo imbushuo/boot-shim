@@ -25,7 +25,6 @@ NTSTATUS BlApplicationEntry(
 	FirmwareDescriptor = (PBL_FIRMWARE_DESCRIPTOR) (ParamPointer + BootAppParameters->FirmwareParametersOffset);
 
 	int ptr3 = (int) pLibraryParam + pLibraryParam[1].HeapAllocationAttributes;
-	int ptr4 = *(DWORD *)(ptr3 + 12);
 	int ptr7 = *(DWORD *)(ptr3 + 56);
 
 	// Switch mode
