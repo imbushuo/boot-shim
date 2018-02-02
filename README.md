@@ -1,19 +1,21 @@
-UEFI:SIMPLE - EFI development made easy
+Boot Shim
 =======================================
 
-A simple UEFI "Hello World!" style application that can:
-* be compiled on Windows or Linux, using Visual Studio 2017 (including CodeGen/Clang support), MinGW or gcc.
-* be compiled for x86_32, x86_64, ARM or ARM64/AARCH64 targets
-* be tested on the fly, through a [QEMU](http://www.qemu.org)+[OVMF](http://tianocore.github.io/ovmf/)
-  UEFI virtual machine.
+Boot Shim is a small ARM32 Windows Boot Manager Application that intended to 
+chain-load the normal UEFI environment for UEFI application development 
+on [hacked Lumias](http://wpinternals.net).
+
+As Lumia verifies `bootarm.efi` or whatever on initialization even when 
+Secure Boot is turned off, this application can provide additional image 
+load capabilities, but you have to develop it from the framework provided.
+
+It is based on [UEFI-Simple](https://github.com/pbatard/uefi-simple). 
+IDE-debugging is not supported.
 
 ## Prerequisites
 
-* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) or gcc/make
-* [QEMU](http://www.qemu.org) __v2.7 or later__
-  (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
-* git
-* wget, unzip, if not using Visual Studio
+* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) with ARM support
+* Git
 
 ## Sub-Module initialization
 
@@ -27,31 +29,13 @@ Or, if using a UI client (such as TortoiseGit) by selecting _Submodule Update_ i
 
 ## Compilation and testing
 
-If using Visual Studio, just press `F5` to have the application compiled and
-launched in the QEMU emulator.
+Only Visual Studio is supported in this branch.
 
-If using MinGW or Linux, issue the following from a command prompt:
+## Visual Studio 2017 and ARM support
 
-`make`
-
-If needed you can also add `ARCH=<arch>` and `CROSS_COMPILE=<tuple>`:
-
-`make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-`
-
-where `<arch>` can be `x64`, `ia32`, `arm` or `aa64`.
-
-You can also add `qemu` as your `make` target to run the application under QEMU,
-in which case a relevant UEFI firmware (OVMF for x86 or QEMU_EFI for Arm) will
-be automatically downloaded to run your application against it.
-
-## Visual Studio 2017 and ARM/ARM64 support
-
-Please be mindful that, to enable ARM or ARM64 compilation support in Visual Studio
+Please be mindful that, to enable ARM compilation support in Visual Studio
 2017, you __MUST__ go to the _Individual components_ screen in the setup application
-and select the ARM/ARM64 compilers and libraries there, as they do __NOT__ appear in
+and select the ARM compilers and libraries there, as they do __NOT__ appear in
 the default _Workloads_ screen:
 
 ![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components2.png)
-
-You also need to ensure that you have Windows SDK 10.0.14393.0 or later installed,
-as this is the minimum version with support for ARM64.

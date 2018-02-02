@@ -137,9 +137,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\..\debug.vbs" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\include\application.h" />
     <ClInclude Include="..\..\include\bl.h" />
     <ClInclude Include="..\..\include\context.h" />

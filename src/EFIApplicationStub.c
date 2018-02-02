@@ -1,7 +1,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-// This is entry stub.
+// This is the actual entrypoint.
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {

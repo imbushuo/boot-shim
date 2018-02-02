@@ -26,5 +26,6 @@ POSSIBILITY OF SUCH DAMAGE. THE EFI SPECIFICATION AND ALL OTHER INFORMATION
 ON THIS WEB SITE ARE PROVIDED "AS IS" WITH NO WARRANTIES, AND ARE SUBJECT
 TO CHANGE WITHOUT NOTICE.
 
-2. The rest of the code, including the project files and makefiles, is set to
-public domain.
+2. The `bl.h` included in this project is part of the ReactOS project, which is covered
+by GPL GENERAL PUBLIC LICENSE Version 2. Hence this project, except `ntstatus.h`(from Windows SDK) 
+is released in GPLv2 license.

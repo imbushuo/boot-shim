@@ -3,6 +3,8 @@
 
 #include "application.h"
 
+// Boot Manager Application Entrypoint
+// Bootstraps environment and transfer control to EFI Application entry point.
 NTSTATUS BlApplicationEntry(
 	_In_ PBOOT_APPLICATION_PARAMETER_BLOCK BootAppParameters,
 	_In_ PBL_LIBRARY_PARAMETERS LibraryParameters
@@ -40,7 +42,7 @@ NTSTATUS BlApplicationEntry(
 		}
 	}
 
-	// Do nothing right now
+	// We are done
 	return STATUS_SUCCESS;
 
 }
