@@ -45,7 +45,8 @@
     <LibraryPath>$(SolutionDir)build\gnu-efi\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <PreBuildEventUseInBuild>
     </PreBuildEventUseInBuild>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>
+    </PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -54,7 +55,8 @@
     <OutDir>$(SolutionDir)arm\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <IncludePath>$(SolutionDir)include;$(IncludePath)</IncludePath>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>
+    </PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -94,10 +96,12 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /n "Bingxing Wang" $(OutputPath)*.efi</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Sign Binaries</Message>
+      <Message>
+      </Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -130,10 +134,12 @@
       <AdditionalOptions>/SUBSYSTEM:BOOT_APPLICATION %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /n "Bingxing Wang" $(OutputPath)*.efi</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Sign Binaries</Message>
+      <Message>
+      </Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
