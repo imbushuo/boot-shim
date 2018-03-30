@@ -56,7 +56,7 @@
     <OutDir>$(SolutionDir)build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)objs\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)include;$(IncludePath)</IncludePath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
     <LibraryPath>$(SolutionDir)build\gnu-efi\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
@@ -134,8 +134,7 @@
       <AdditionalOptions>/SUBSYSTEM:BOOT_APPLICATION %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Sign binaries</Message>
