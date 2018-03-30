@@ -1,10 +1,9 @@
 #include <efi.h>
 #include <efilib.h>
+
 #include "lk.h"
 #include "elf.h"
 #include "ProcessorSupport.h"
-
-#include <armintr.h>
 
 BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
 VOID JumpToAddress(EFI_PHYSICAL_ADDRESS addr);
@@ -80,7 +79,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 
 	EFI_STATUS Status = EFI_SUCCESS;
-	EFI_PHYSICAL_ADDRESS LkEntryPoint = LK_ENTRY_POINT_ADDR;
+	EFI_PHYSICAL_ADDRESS LkEntryPoint = LK_ENTRY_POINT_ADDR_INVALID;
 
 	UINTN NumHandles = 0;
 	EFI_HANDLE *SfsHandles;
@@ -338,8 +337,6 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 exit:
-	Print(L"%EWill exit in 5 seconds. %N\n");
-	gBS->Stall(5000000);
 	return Status;
 
 }
