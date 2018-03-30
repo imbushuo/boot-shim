@@ -5,6 +5,12 @@
 #include "elf.h"
 #include "ProcessorSupport.h"
 
+// Util for Stall
+#ifndef _EFI_STALL_UTIL_
+#define _EFI_STALL_UTIL_
+#define SECONDS_TO_MICROSECONDS(x) x * 1000000
+#endif
+
 BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
 VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr);
 
@@ -333,7 +339,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		/* Jump to LOAD section entry point and never returns */
 		Print(L"\nJump to address 0x%x\n", lk_elf32_phdr->p_paddr);
 
-		gBS->Stall(5000000);
+#if _DEBUG
+		gBS->Stall(SECONDS_TO_MICROSECONDS(5));
+#endif
 		JumpToAddress(ImageHandle, lk_elf32_phdr->p_paddr);
 
 		local_cleanup_file_pool:
@@ -349,11 +357,12 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			Print(L"Failed to close LK image: %r\n", Status);
 		}
 
-		// Finished
 		break;
 	}
 
 exit:
+	// If something fails, give 5 seconds to user inspect what happened
+	gBS->Stall(SECONDS_TO_MICROSECONDS(5));
 	return Status;
 
 }

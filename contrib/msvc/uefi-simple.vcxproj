@@ -94,8 +94,8 @@
       </AddModuleNamesToAssembly>
     </Link>
     <PreBuildEvent>
-      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
-      <Message>Generate ARM support assembly object</Message>
+      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ARM\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
+      <Message>Generate ARM32 support assembly object</Message>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
@@ -141,8 +141,8 @@
       <Message>Sign binaries</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
-      <Message>Generate ARM support assembly object</Message>
+      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ARM\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
+      <Message>Generate ARM32 support assembly object</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -159,12 +159,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\BlApplicationEntry.c" />
     <ClCompile Include="..\..\src\Context.c" />
-    <ClCompile Include="..\..\src\EFIApplicationStub.c" />
+    <ClCompile Include="..\..\src\EFIApp.c" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\..\src\ProcessorSupport.asm">
-      <FileType>Document</FileType>
-    </MASM>
+    <MASM Include="..\..\src\ARM\ProcessorSupport.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

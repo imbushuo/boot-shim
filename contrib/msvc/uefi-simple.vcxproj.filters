@@ -12,50 +12,65 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{b1c3b304-e868-4b07-988c-36ad7bc57300}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ARM">
+      <UniqueIdentifier>{73487f8a-c052-47e0-9eb8-050474d682d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ELF">
+      <UniqueIdentifier>{3f778fe3-0acc-4ed9-8806-1af29d71bcad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Processor">
+      <UniqueIdentifier>{119ea8e3-3989-47bb-a467-8b8ba2aa9da8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Primitives">
+      <UniqueIdentifier>{062e6eb6-0891-4995-ae75-c2cab206170b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Application">
+      <UniqueIdentifier>{681b8a20-8157-4e56-8db5-cd27053bd5bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\bl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\suptypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\application.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\ntstatus.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\context.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\lk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\elf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\xplatprimitives.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\ELF</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\ProcessorSupport.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Processor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\xplatprimitives.h">
+      <Filter>Header Files\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\suptypes.h">
+      <Filter>Header Files\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ntstatus.h">
+      <Filter>Header Files\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\application.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\bl.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\context.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\lk.h">
+      <Filter>Header Files\Application</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\BlApplicationEntry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\EFIApplicationStub.c">
+    <ClCompile Include="..\..\src\Context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Context.c">
+    <ClCompile Include="..\..\src\EFIApp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\..\src\ProcessorSupport.asm">
-      <Filter>Source Files</Filter>
+    <MASM Include="..\..\src\ARM\ProcessorSupport.asm">
+      <Filter>Source Files\ARM</Filter>
     </MASM>
   </ItemGroup>
 </Project>
