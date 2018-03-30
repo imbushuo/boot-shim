@@ -77,12 +77,18 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	CHAR16 *LkFileName = LK_BINARY_NAME;
 
 	UINTN LkFileBufferSize;
+	UINTN LkLoadPages;
 	VOID* LkFileBuffer;
+	VOID* LkLoadSec;
 
 	EFI_FILE_INFO *LkFileInformation = NULL;
 	UINTN LkFileInformationSize = 0;
 
 	Elf32_Ehdr* lk_elf32_ehdr = NULL;
+	Elf32_Phdr* lk_elf32_phdr = NULL;
+
+	UINTN load_section_offset = 0;
+	UINTN load_section_length = 0;
 
 #if defined(_GNU_EFI)
 	InitializeLib(ImageHandle, SystemTable);
@@ -214,7 +220,88 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			goto local_cleanup_file_pool;
 		}
 
+		/* Check overlapping */
+		if (lk_elf32_ehdr->e_phoff < sizeof(Elf32_Ehdr))
+		{
+			Print(L"ELF header has overlapping\n");
+			goto local_cleanup_file_pool;
+		}
+
 		Print(L"Proceeded to LK image load\n");
+		LkEntryPoint = lk_elf32_ehdr->e_entry;
+		lk_elf32_phdr = (VOID*) (((UINTN) LkFileBuffer) + lk_elf32_ehdr->e_phoff);
+
+		Print(L"%d sections will be inspected.\n", lk_elf32_ehdr->e_phnum);
+
+		/* Determine LOAD section */
+		for (UINTN ph_idx = 0; ph_idx < lk_elf32_ehdr->e_phnum; ph_idx++)
+		{
+			lk_elf32_phdr = (VOID*) (((UINTN)lk_elf32_phdr) + (ph_idx * sizeof(Elf32_Phdr)));
+
+			/* Check if it is LOAD section */
+			if (lk_elf32_phdr->p_type != PT_LOAD)
+			{
+				Print(L"Section %d skipped because it is not LOAD, it is 0x%x\n", ph_idx, lk_elf32_phdr->p_type);
+				continue;
+			}
+
+			/* Sanity check: PA = VA, PA = entry_point, memory size = file size */
+			if (lk_elf32_phdr->p_paddr != lk_elf32_phdr->p_vaddr)
+			{
+				Print(L"LOAD section %d skipped due to identity mapping vioaltion\n", ph_idx);
+				continue;
+			}
+
+			if (lk_elf32_phdr->p_filesz != lk_elf32_phdr->p_memsz)
+			{
+				Print(L"LOAD section %d skipped due to inconsistent size\n", ph_idx);
+				continue;
+			}
+
+			if (lk_elf32_phdr->p_paddr != LkEntryPoint)
+			{
+				Print(L"LOAD section %d skipped due to entry point violation\n", ph_idx);
+				continue;
+			}
+
+			load_section_offset = lk_elf32_phdr->p_offset;
+			load_section_length = lk_elf32_phdr->p_memsz;
+
+			/* Exit on the first result */
+			break;
+		}
+
+		if (load_section_offset == 0 || load_section_length == 0)
+		{
+			Print(L"Unable to find suitable LOAD section\n");
+			goto local_cleanup_file_pool;
+		}
+
+		Print(L"ELF entry point = 0x%x\n", LkEntryPoint);
+		Print(L"ELF offset = 0x%x\n", load_section_offset);
+		Print(L"ELF length = 0x%x\n", load_section_length);
+
+		LkLoadSec = (VOID*) (((UINTN) LkFileBuffer) + load_section_offset);
+
+		/* Allocate memory for actual bootstrapping */
+		LkLoadPages = (load_section_length % EFI_PAGE_SIZE != 0) ?
+			(load_section_length / EFI_PAGE_SIZE) + 1 :
+			(load_section_length / EFI_PAGE_SIZE);
+
+		Status = gBS->AllocatePages(AllocateAddress, EfiBootServicesCode, LkLoadPages, &LkEntryPoint);
+		if (EFI_ERROR(Status))
+		{
+			Print(L"Failed to allocate pages for bootstrapping: %r\n", Status);
+			goto local_cleanup_file_pool;
+		}
+
+		Print(L"Memory allocated!\n");
+
+		/* Move LOAD section to actual location */
+		CopyMem((VOID*) LkEntryPoint, LkLoadSec, load_section_length);
+		Print(L"Memory copied!\n");
+
+		/* Jump to LOAD section entry point and never returns */
 
 		local_cleanup_file_pool:
 		gBS->FreePool(LkFileBuffer);
