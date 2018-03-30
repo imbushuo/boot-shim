@@ -19,8 +19,7 @@ VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr)
 	UINT32 DesVersion = 0;
 
 	/* Entry */
-	if (addr != 0x0f900000) return;
-	VOID(*entry)() = (VOID*) 0x0f900000;
+	VOID(*entry)() = (VOID*) addr;
 
 	gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DesSize, &DesVersion);
 
