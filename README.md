@@ -1,13 +1,9 @@
-Boot Shim
+Boot Shim (ELF Variant)
 =======================================
 
 Boot Shim is a small ARM32 Windows Boot Manager Application that intended to 
-chain-load the normal UEFI environment for UEFI application development 
-on [hacked Lumias](http://wpinternals.net).
-
-As Lumia verifies `bootarm.efi` or whatever on initialization even when 
-Secure Boot is turned off, this application can provide additional image 
-load capabilities, but you have to develop it from the framework provided.
+chain-load any random ARM32 ELF applications on [hacked Lumias](http://wpinternals.net)
+or other UEFI/ARM32 Windows devices.
 
 It is based on [UEFI-Simple](https://github.com/pbatard/uefi-simple). 
 IDE-debugging is not supported.
@@ -39,3 +35,11 @@ and select the ARM compilers and libraries there, as they do __NOT__ appear in
 the default _Workloads_ screen:
 
 ![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components2.png)
+
+## ELF requirements
+
+Only single `LOAD` section in ELF64 files will be recognized, it must has physical address 
+and virtual address matched (EFI identity mapping), memory size and file size must match. 
+Additionaly, entry point and physical address must match.
+
+Little Kernel (aboot) signed variants meet these requirements.
