@@ -45,7 +45,7 @@
     <LibraryPath>$(SolutionDir)build\gnu-efi\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <PreBuildEventUseInBuild>
     </PreBuildEventUseInBuild>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -95,8 +95,7 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Sign binaries</Message>
@@ -143,8 +142,11 @@
     <ClInclude Include="..\..\include\application.h" />
     <ClInclude Include="..\..\include\bl.h" />
     <ClInclude Include="..\..\include\context.h" />
+    <ClInclude Include="..\..\include\elf.h" />
+    <ClInclude Include="..\..\include\lk.h" />
     <ClInclude Include="..\..\include\ntstatus.h" />
     <ClInclude Include="..\..\include\suptypes.h" />
+    <ClInclude Include="..\..\include\xplatprimitives.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\BlApplicationEntry.c" />
