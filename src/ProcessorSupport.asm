@@ -20,17 +20,24 @@ ArmDeInitialize
 	dsb
 	isb
 
-	; Invalidates I-Cache
-	mcr     p15, 0, r0, c7, c5, 0			  ; Invalidate entire instruction cache
-	dsb
-	isb
-
 	; Turn off MMU, I-Cache, D-Cache
 	mrc		p15, 0, r0, c1, c0, 0           ; Get control register
 	bic		r0, r0, #CTRL_M_BIT             ; Disable MMU
 	bic		r0, r0, #CTRL_C_BIT             ; Disable D Cache
 	bic		r0, r0, #CTRL_I_BIT             ; Disable I Cache
 	mcr		p15, 0, r0, c1, c0, 0           ; Write control register
+	dsb
+	isb
+
+	; Invalidates I-Cache
+	mcr     p15, 0, R0, c7, c5, 0			; Invalidate entire instruction cache
+	dsb
+	isb
+
+	; Flush TLB
+	mov     r0, #0
+	mcr     p15, 0, r0, c8, c7, 0
+	mcr     p15, 0, R9, c7, c5, 6			; BPIALL Invalidate Branch predictor array. R9 == NoOp
 	dsb
 	isb
 

@@ -6,16 +6,18 @@
 #include "ProcessorSupport.h"
 
 BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
-VOID JumpToAddress(EFI_PHYSICAL_ADDRESS addr);
+VOID JumpToAddress(uint32_t addr);
 
-VOID JumpToAddress(EFI_PHYSICAL_ADDRESS addr)
+VOID JumpToAddress(uint32_t addr)
 {
+	/* Entry */
+	VOID(*entry)() = (VOID*) addr;
 
 	/* De-initialize */
 	ArmDeInitialize();
 
 	/* Lets go */
-	((void(*)(void)) addr)();
+	entry();
 
 }
 
@@ -291,7 +293,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			goto local_cleanup_file_pool;
 		}
 
-		Print(L"ELF entry point = 0x%x\n", LkEntryPoint);
+
+		Print(L"ELF entry point = 0x%x\n", lk_elf32_phdr->p_paddr);
 		Print(L"ELF offset = 0x%x\n", load_section_offset);
 		Print(L"ELF length = 0x%x\n", load_section_length);
 
@@ -302,22 +305,18 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			(load_section_length / EFI_PAGE_SIZE) + 1 :
 			(load_section_length / EFI_PAGE_SIZE);
 
-		Status = gBS->AllocatePages(AllocateAddress, EfiBootServicesCode, LkLoadPages, &LkEntryPoint);
-		if (EFI_ERROR(Status))
-		{
-			Print(L"Failed to allocate pages for bootstrapping: %r\n", Status);
-			goto local_cleanup_file_pool;
-		}
-
-		Print(L"Memory allocated!\n");
+		Print(L"Allocate memory at 0x%x\n", lk_elf32_phdr->p_paddr);
+		Print(L"Allocate 0x%x pages memory\n", LkLoadPages);
 
 		/* Move LOAD section to actual location */
-		CopyMem((VOID*) LkEntryPoint, LkLoadSec, load_section_length);
+		CopyMem((VOID*) (lk_elf32_phdr->p_paddr), LkLoadSec, load_section_length);
 		Print(L"Memory copied!\n");
 
 		/* Jump to LOAD section entry point and never returns */
-		Print(L"\nJump to address 0x%x\n", LkEntryPoint);
-		JumpToAddress(LkEntryPoint);
+		Print(L"\nJump to address 0x%x\n", lk_elf32_phdr->p_paddr);
+
+		gBS->Stall(5000000);
+		JumpToAddress(lk_elf32_phdr->p_paddr);
 
 		local_cleanup_file_pool:
 		gBS->FreePool(LkFileBuffer);
