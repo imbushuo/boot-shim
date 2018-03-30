@@ -38,6 +38,9 @@
     <ClInclude Include="..\..\include\xplatprimitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\ProcessorSupport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\BlApplicationEntry.c">
@@ -49,5 +52,10 @@
     <ClCompile Include="..\..\src\Context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\src\ProcessorSupport.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

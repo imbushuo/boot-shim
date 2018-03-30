@@ -35,6 +35,9 @@
     <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
@@ -43,8 +46,7 @@
     <IntDir>$(SolutionDir)objs\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)build\gnu-efi\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
-    <PreBuildEventUseInBuild>
-    </PreBuildEventUseInBuild>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -56,6 +58,7 @@
     <IncludePath>$(SolutionDir)include;$(IncludePath)</IncludePath>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <LibraryPath>$(SolutionDir)build\gnu-efi\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -87,12 +90,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
       <AdditionalOptions>/SUBSYSTEM:BOOT_APPLICATION %(AdditionalOptions)</AdditionalOptions>
+      <AddModuleNamesToAssembly>
+      </AddModuleNamesToAssembly>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
-      <Message>
-      </Message>
+      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
+      <Message>Generate ARM support assembly object</Message>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
@@ -137,6 +140,10 @@
     <PostBuildEvent>
       <Message>Sign binaries</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
+      <Message>Generate ARM support assembly object</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\application.h" />
@@ -145,6 +152,7 @@
     <ClInclude Include="..\..\include\elf.h" />
     <ClInclude Include="..\..\include\lk.h" />
     <ClInclude Include="..\..\include\ntstatus.h" />
+    <ClInclude Include="..\..\include\ProcessorSupport.h" />
     <ClInclude Include="..\..\include\suptypes.h" />
     <ClInclude Include="..\..\include\xplatprimitives.h" />
   </ItemGroup>
@@ -153,7 +161,13 @@
     <ClCompile Include="..\..\src\Context.c" />
     <ClCompile Include="..\..\src\EFIApplicationStub.c" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\src\ProcessorSupport.asm">
+      <FileType>Document</FileType>
+    </MASM>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

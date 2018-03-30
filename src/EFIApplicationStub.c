@@ -2,8 +2,23 @@
 #include <efilib.h>
 #include "lk.h"
 #include "elf.h"
+#include "ProcessorSupport.h"
+
+#include <armintr.h>
 
 BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
+VOID JumpToAddress(EFI_PHYSICAL_ADDRESS addr);
+
+VOID JumpToAddress(EFI_PHYSICAL_ADDRESS addr)
+{
+
+	/* De-initialize */
+	ArmDeInitialize();
+
+	/* Lets go */
+	((void(*)(void)) addr)();
+
+}
 
 BOOLEAN CheckElf32Header(Elf32_Ehdr* bl_elf_hdr)
 {
@@ -302,6 +317,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"Memory copied!\n");
 
 		/* Jump to LOAD section entry point and never returns */
+		Print(L"\nJump to address 0x%x\n", LkEntryPoint);
+		JumpToAddress(LkEntryPoint);
 
 		local_cleanup_file_pool:
 		gBS->FreePool(LkFileBuffer);
