@@ -6,12 +6,31 @@
 #include "ProcessorSupport.h"
 
 BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
-VOID JumpToAddress(uint32_t addr);
+VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr);
 
-VOID JumpToAddress(uint32_t addr)
+VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr)
 {
+
+	EFI_STATUS Status;
+	UINTN MemMapSize = 0;
+	EFI_MEMORY_DESCRIPTOR* MemMap = 0;
+	UINTN MapKey = 0;
+	UINTN DesSize = 0;
+	UINT32 DesVersion = 0;
+
 	/* Entry */
-	VOID(*entry)() = (VOID*) addr;
+	if (addr != 0x0f900000) return;
+	VOID(*entry)() = (VOID*) 0x0f900000;
+
+	gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DesSize, &DesVersion);
+
+	/* Shutdown */
+	Status = gBS->ExitBootServices(ImageHandle, MapKey);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"Failed to exit BS\n");
+		return;
+	}
 
 	/* De-initialize */
 	ArmDeInitialize();
@@ -316,7 +335,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"\nJump to address 0x%x\n", lk_elf32_phdr->p_paddr);
 
 		gBS->Stall(5000000);
-		JumpToAddress(lk_elf32_phdr->p_paddr);
+		JumpToAddress(ImageHandle, lk_elf32_phdr->p_paddr);
 
 		local_cleanup_file_pool:
 		gBS->FreePool(LkFileBuffer);
