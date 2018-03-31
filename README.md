@@ -40,14 +40,14 @@ the default _Workloads_ screen:
 
 ## ELF requirements
 
-- There must be a LOAD section has p_paddr and p_vaddr matches program entry point address (e_entry).
-- LOAD section must have p_paddr equals to p_vaddr (identity mapping requirements).
+- There must be a LOAD section has `p_paddr` and `p_vaddr` matches program entry point address (`e_entry`).
+- LOAD section must have `p_paddr` equals to `p_vaddr` (identity mapping requirements).
 - LOAD section must reside in device's memory region. That means p_paddr must larger or equal (not likely) to 
-device's memory base, and p_addr + p_memsz must not go out of device's memory region.
-- LOAD section must have p_memsz equals to p_filesz.
+device's memory base, and `p_addr` + `p_memsz` must not go out of device's memory region.
+- LOAD section must have `p_memsz` equals to `p_filesz`.
 - Only first LOAD section that meets these requirements will be loaded into memory.
-- e_machine must be EM_ARM.
-- e_type must be ET_EXEC.
-- Has name of emmc_appsboot.mbn in a firmware-recognized partition (it will try all partitions and use the first one available)
+- `e_machine` must be `EM_ARM`.
+- `e_type` must be `ET_EXEC`.
+- Has name of `emmc_appsboot.mbn` in a firmware-recognized partition (it will try all partitions and use the first one available)
 
 Little Kernel (aboot) signed variants meet these requirements.
