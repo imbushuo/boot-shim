@@ -339,7 +339,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		/* Jump to LOAD section entry point and never returns */
 		Print(L"\nJump to address 0x%x\n", lk_elf32_phdr->p_paddr);
 
-#if _DEBUG
+#if _DEBUG_INSPECT_
 		gBS->Stall(SECONDS_TO_MICROSECONDS(5));
 #endif
 		JumpToAddress(ImageHandle, lk_elf32_phdr->p_paddr);

@@ -29,7 +29,7 @@ ArmDeInitialize
 	dsb
 	isb
 
-	; Invalidates I-Cache
+	; Invalidate I-Cache
 	mcr     p15, 0, R0, c7, c5, 0			; Invalidate entire instruction cache
 	dsb
 	isb

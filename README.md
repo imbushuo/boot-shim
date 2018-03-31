@@ -25,7 +25,9 @@ Or, if using a UI client (such as TortoiseGit) by selecting _Submodule Update_ i
 
 ## Compilation and testing
 
-Only Visual Studio is supported in this branch.
+Only Visual Studio is supported in this branch. Do not use `Release` mode, it won't work.
+
+I used a well-known certificate from Windows Kits to sign the binary. You can replace with yours.
 
 ## Visual Studio 2017 and ARM support
 
@@ -38,8 +40,14 @@ the default _Workloads_ screen:
 
 ## ELF requirements
 
-Only single `LOAD` section in ELF64 files will be recognized, it must has physical address 
-and virtual address matched (EFI identity mapping), memory size and file size must match. 
-Additionaly, entry point and physical address must match.
+- There must be a LOAD section has p_paddr and p_vaddr matches program entry point address (e_entry).
+- LOAD section must have p_paddr equals to p_vaddr (identity mapping requirements).
+- LOAD section must reside in device's memory region. That means p_paddr must larger or equal (not likely) to 
+device's memory base, and p_addr + p_memsz must not go out of device's memory region.
+- LOAD section must have p_memsz equals to p_filesz.
+- Only first LOAD section that meets these requirements will be loaded into memory.
+- e_machine must be EM_ARM.
+- e_type must be ET_EXEC.
+- Has name of emmc_appsboot.mbn in a firmware-recognized partition (it will try all partitions and use the first one available)
 
 Little Kernel (aboot) signed variants meet these requirements.

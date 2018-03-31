@@ -13,17 +13,12 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|arm = Debug|arm
-		Release|arm = Release|arm
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}.Debug|arm.ActiveCfg = Debug|ARM
 		{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}.Debug|arm.Build.0 = Debug|ARM
-		{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}.Release|arm.ActiveCfg = Release|ARM
-		{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}.Release|arm.Build.0 = Release|ARM
 		{3135D563-9596-4584-9ED6-616ADEC52974}.Debug|arm.ActiveCfg = Debug|ARM
 		{3135D563-9596-4584-9ED6-616ADEC52974}.Debug|arm.Build.0 = Debug|ARM
-		{3135D563-9596-4584-9ED6-616ADEC52974}.Release|arm.ActiveCfg = Release|ARM
-		{3135D563-9596-4584-9ED6-616ADEC52974}.Release|arm.Build.0 = Release|ARM
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
