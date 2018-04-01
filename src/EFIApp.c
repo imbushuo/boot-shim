@@ -105,17 +105,16 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 
 	EFI_STATUS Status = EFI_SUCCESS;
-	EFI_PHYSICAL_ADDRESS LkEntryPoint = LK_ENTRY_POINT_ADDR_INVALID;
-
+	
 	UINTN NumHandles = 0;
 	EFI_HANDLE *SfsHandles;
 
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *SfsProtocol;
-
 	EFI_FILE_PROTOCOL *FileProtocol;
 	EFI_FILE_PROTOCOL *LkFileProtocol;
 	CHAR16 *LkFileName = LK_BINARY_NAME;
 
+	EFI_PHYSICAL_ADDRESS LkEntryPoint = LK_ENTRY_POINT_ADDR_INVALID;
 	UINTN LkFileBufferSize;
 	UINTN LkLoadPages;
 	VOID* LkFileBuffer;
@@ -268,8 +267,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 
 		Print(L"Proceeded to LK image load\n");
-		LkEntryPoint = lk_elf32_ehdr->e_entry;
 		lk_elf32_phdr = (VOID*) (((UINTN) LkFileBuffer) + lk_elf32_ehdr->e_phoff);
+		LkEntryPoint = lk_elf32_ehdr->e_entry;
 
 		Print(L"%d sections will be inspected.\n", lk_elf32_ehdr->e_phnum);
 
@@ -317,7 +316,6 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			goto local_cleanup_file_pool;
 		}
 
-
 		Print(L"ELF entry point = 0x%x\n", lk_elf32_phdr->p_paddr);
 		Print(L"ELF offset = 0x%x\n", load_section_offset);
 		Print(L"ELF length = 0x%x\n", load_section_length);
@@ -332,6 +330,13 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"Allocate memory at 0x%x\n", lk_elf32_phdr->p_paddr);
 		Print(L"Allocate 0x%x pages memory\n", LkLoadPages);
 
+		Status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, LkLoadPages, &LkEntryPoint);
+		if (EFI_ERROR(Status))
+		{
+			Print(L"Failed to allocate memory for ELF payload\n");
+			goto local_cleanup_file_pool;
+		}
+		
 		/* Move LOAD section to actual location */
 		CopyMem((VOID*) (lk_elf32_phdr->p_paddr), LkLoadSec, load_section_length);
 		Print(L"Memory copied!\n");
