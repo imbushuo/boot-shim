@@ -63,7 +63,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;_ARM</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;_ARM;_DEBUG_INSPECT_</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -94,7 +94,7 @@
       </AddModuleNamesToAssembly>
     </Link>
     <PreBuildEvent>
-      <Command>armasm -coff_thumb2_only $(ProjectDir)..\..\src\ARM\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
+      <Command>armasm -32 $(ProjectDir)..\..\src\ARM\ProcessorSupport.asm $(IntermediateOutputPath)ProcessorSupport.obj</Command>
       <Message>Generate ARM32 support assembly object</Message>
     </PreBuildEvent>
     <PostBuildEvent>
