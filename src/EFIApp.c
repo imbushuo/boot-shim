@@ -1,18 +1,4 @@
-#include <efi.h>
-#include <efilib.h>
-
-#include "lk.h"
-#include "elf.h"
-#include "ProcessorSupport.h"
-
-// Util for Stall
-#ifndef _EFI_STALL_UTIL_
-#define _EFI_STALL_UTIL_
-#define SECONDS_TO_MICROSECONDS(x) x * 1000000
-#endif
-
-BOOLEAN CheckElf32Header(Elf32_Ehdr* header);
-VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr);
+#include "EFIApp.h"
 
 VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr)
 {
@@ -111,23 +97,23 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *SfsProtocol;
 	EFI_FILE_PROTOCOL *FileProtocol;
-	EFI_FILE_PROTOCOL *LkFileProtocol;
-	CHAR16 *LkFileName = LK_BINARY_NAME;
+	EFI_FILE_PROTOCOL *PayloadFileProtocol;
+	CHAR16 *PayloadFileName = PAYLOAD_BINARY_NAME;
 
-	EFI_PHYSICAL_ADDRESS LkEntryPoint = LK_ENTRY_POINT_ADDR_INVALID;
-	UINTN LkFileBufferSize;
-	UINTN LkLoadPages;
-	VOID* LkFileBuffer;
-	VOID* LkLoadSec;
+	EFI_PHYSICAL_ADDRESS LkEntryPoint = PAYLOAD_ENTRY_POINT_ADDR_INVALID;
+	UINTN PayloadFileBufferSize;
+	UINTN PayloadLoadPages;
+	VOID* PayloadFileBuffer;
+	VOID* PayloadLoadSec;
 
-	EFI_FILE_INFO *LkFileInformation = NULL;
-	UINTN LkFileInformationSize = 0;
+	EFI_FILE_INFO *PayloadFileInformation = NULL;
+	UINTN PayloadFileInformationSize = 0;
 
-	Elf32_Ehdr* lk_elf32_ehdr = NULL;
-	Elf32_Phdr* lk_elf32_phdr = NULL;
+	Elf32_Ehdr* PayloadElf32Ehdr = NULL;
+	Elf32_Phdr* PayloadElf32Phdr = NULL;
 
-	UINTN load_section_offset = 0;
-	UINTN load_section_length = 0;
+	UINTN PayloadSectionOffset = 0;
+	UINTN PayloadLength = 0;
 
 #if defined(_GNU_EFI)
 	InitializeLib(ImageHandle, SystemTable);
@@ -174,62 +160,62 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		Status = FileProtocol->Open(
 			FileProtocol,
-			&LkFileProtocol,
-			LkFileName,
+			&PayloadFileProtocol,
+			PayloadFileName,
 			EFI_FILE_MODE_READ,
 			EFI_FILE_READ_ONLY | EFI_FILE_HIDDEN | EFI_FILE_SYSTEM
 		);
 
 		if (EFI_ERROR(Status))
 		{
-			Print(L"Failed to open LK image: %r\n", Status);
+			Print(L"Failed to open payload image: %r\n", Status);
 			continue;
 		}
 
 		// Read image and parse ELF32 file
-		Print(L"Opened LK image\n");
+		Print(L"Opened payload image\n");
 
-		Status = LkFileProtocol->GetInfo(
-			LkFileProtocol,
+		Status = PayloadFileProtocol->GetInfo(
+			PayloadFileProtocol,
 			&gEfiFileInfoGuid,
-			&LkFileInformationSize,
-			(VOID *) LkFileInformation
+			&PayloadFileInformationSize,
+			(VOID *) PayloadFileInformation
 		);
 
 		if (Status == EFI_BUFFER_TOO_SMALL)
 		{
-			Status = gBS->AllocatePool(EfiBootServicesData, LkFileInformationSize, &LkFileInformation);
+			Status = gBS->AllocatePool(EfiBootServicesData, PayloadFileInformationSize, &PayloadFileInformation);
 			if (EFI_ERROR(Status))
 			{
 				Print(L"Failed to allocate pool for file info: %r\n", Status);
 				goto local_cleanup;
 			}
 
-			Status = LkFileProtocol->GetInfo(
-				LkFileProtocol,
+			Status = PayloadFileProtocol->GetInfo(
+				PayloadFileProtocol,
 				&gEfiFileInfoGuid,
-				&LkFileInformationSize,
-				(VOID *)LkFileInformation
+				&PayloadFileInformationSize,
+				(VOID *)PayloadFileInformation
 			);
 		}
 
 		if (EFI_ERROR(Status))
 		{
-			Print(L"Failed to stat LK image: %r\n", Status);
+			Print(L"Failed to stat payload image: %r\n", Status);
 			goto local_cleanup;
 		}
 
-		Print(L"LK image size: 0x%llx\n", LkFileInformation->FileSize);
-		if (LkFileInformation->FileSize > UINT32_MAX)
+		Print(L"Payload image size: 0x%llx\n", PayloadFileInformation->FileSize);
+		if (PayloadFileInformation->FileSize > UINT32_MAX)
 		{
-			Print(L"LK image is too large\n");
+			Print(L"Payload image is too large\n");
 			goto local_cleanup_free_info;
 		}
 
-		LkFileBufferSize = (UINTN) LkFileInformation->FileSize;
+		PayloadFileBufferSize = (UINTN) PayloadFileInformation->FileSize;
 
 		/* Allocate pool for reading file */
-		Status = gBS->AllocatePool(EfiBootServicesData, LkFileBufferSize, &LkFileBuffer);
+		Status = gBS->AllocatePool(EfiBootServicesData, PayloadFileBufferSize, &PayloadFileBuffer);
 		if (EFI_ERROR(Status))
 		{
 			Print(L"Failed to allocate pool for file: %r\n", Status);
@@ -237,10 +223,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 
 		/* Read file */
-		Status = LkFileProtocol->Read(
-			LkFileProtocol,
-			&LkFileBufferSize,
-			LkFileBuffer
+		Status = PayloadFileProtocol->Read(
+			PayloadFileProtocol,
+			&PayloadFileBufferSize,
+			PayloadFileBuffer
 		);
 
 		if (EFI_ERROR(Status))
@@ -249,88 +235,88 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			goto local_cleanup_file_pool;
 		}
 
-		Print(L"LK read into memory at 0x%x.\n", LkFileBuffer);
+		Print(L"Payload loaded into memory at 0x%x.\n", PayloadFileBuffer);
 
 		/* Check LK file */
-		lk_elf32_ehdr = LkFileBuffer;
-		if (!CheckElf32Header(lk_elf32_ehdr))
+		PayloadElf32Ehdr = PayloadFileBuffer;
+		if (!CheckElf32Header(PayloadElf32Ehdr))
 		{
 			Print(L"Cannot load this LK image\n");
 			goto local_cleanup_file_pool;
 		}
 
 		/* Check overlapping */
-		if (lk_elf32_ehdr->e_phoff < sizeof(Elf32_Ehdr))
+		if (PayloadElf32Ehdr->e_phoff < sizeof(Elf32_Ehdr))
 		{
 			Print(L"ELF header has overlapping\n");
 			goto local_cleanup_file_pool;
 		}
 
-		Print(L"Proceeded to LK image load\n");
-		lk_elf32_phdr = (VOID*) (((UINTN) LkFileBuffer) + lk_elf32_ehdr->e_phoff);
-		LkEntryPoint = lk_elf32_ehdr->e_entry;
+		Print(L"Proceeded to Payload load\n");
+		PayloadElf32Phdr = (VOID*) (((UINTN) PayloadFileBuffer) + PayloadElf32Ehdr->e_phoff);
+		LkEntryPoint = PayloadElf32Ehdr->e_entry;
 
-		Print(L"%d sections will be inspected.\n", lk_elf32_ehdr->e_phnum);
+		Print(L"%d sections will be inspected.\n", PayloadElf32Ehdr->e_phnum);
 
 		/* Determine LOAD section */
-		for (UINTN ph_idx = 0; ph_idx < lk_elf32_ehdr->e_phnum; ph_idx++)
+		for (UINTN ph_idx = 0; ph_idx < PayloadElf32Ehdr->e_phnum; ph_idx++)
 		{
-			lk_elf32_phdr = (VOID*) (((UINTN)lk_elf32_phdr) + (ph_idx * sizeof(Elf32_Phdr)));
+			PayloadElf32Phdr = (VOID*) (((UINTN)PayloadElf32Phdr) + (ph_idx * sizeof(Elf32_Phdr)));
 
 			/* Check if it is LOAD section */
-			if (lk_elf32_phdr->p_type != PT_LOAD)
+			if (PayloadElf32Phdr->p_type != PT_LOAD)
 			{
-				Print(L"Section %d skipped because it is not LOAD, it is 0x%x\n", ph_idx, lk_elf32_phdr->p_type);
+				Print(L"Section %d skipped because it is not LOAD, it is 0x%x\n", ph_idx, PayloadElf32Phdr->p_type);
 				continue;
 			}
 
 			/* Sanity check: PA = VA, PA = entry_point, memory size = file size */
-			if (lk_elf32_phdr->p_paddr != lk_elf32_phdr->p_vaddr)
+			if (PayloadElf32Phdr->p_paddr != PayloadElf32Phdr->p_vaddr)
 			{
 				Print(L"LOAD section %d skipped due to identity mapping vioaltion\n", ph_idx);
 				continue;
 			}
 
-			if (lk_elf32_phdr->p_filesz != lk_elf32_phdr->p_memsz)
+			if (PayloadElf32Phdr->p_filesz != PayloadElf32Phdr->p_memsz)
 			{
 				Print(L"LOAD section %d skipped due to inconsistent size\n", ph_idx);
 				continue;
 			}
 
-			if (lk_elf32_phdr->p_paddr != LkEntryPoint)
+			if (PayloadElf32Phdr->p_paddr != LkEntryPoint)
 			{
 				Print(L"LOAD section %d skipped due to entry point violation\n", ph_idx);
 				continue;
 			}
 
-			load_section_offset = lk_elf32_phdr->p_offset;
-			load_section_length = lk_elf32_phdr->p_memsz;
+			PayloadSectionOffset = PayloadElf32Phdr->p_offset;
+			PayloadLength = PayloadElf32Phdr->p_memsz;
 
 			/* Exit on the first result */
 			break;
 		}
 
-		if (load_section_offset == 0 || load_section_length == 0)
+		if (PayloadSectionOffset == 0 || PayloadLength == 0)
 		{
 			Print(L"Unable to find suitable LOAD section\n");
 			goto local_cleanup_file_pool;
 		}
 
-		Print(L"ELF entry point = 0x%x\n", lk_elf32_phdr->p_paddr);
-		Print(L"ELF offset = 0x%x\n", load_section_offset);
-		Print(L"ELF length = 0x%x\n", load_section_length);
+		Print(L"ELF entry point = 0x%x\n", PayloadElf32Phdr->p_paddr);
+		Print(L"ELF offset = 0x%x\n", PayloadSectionOffset);
+		Print(L"ELF length = 0x%x\n", PayloadLength);
 
-		LkLoadSec = (VOID*) (((UINTN) LkFileBuffer) + load_section_offset);
+		PayloadLoadSec = (VOID*) (((UINTN) PayloadFileBuffer) + PayloadSectionOffset);
 
 		/* Allocate memory for actual bootstrapping */
-		LkLoadPages = (load_section_length % EFI_PAGE_SIZE != 0) ?
-			(load_section_length / EFI_PAGE_SIZE) + 1 :
-			(load_section_length / EFI_PAGE_SIZE);
+		PayloadLoadPages = (PayloadLength % EFI_PAGE_SIZE != 0) ?
+			(PayloadLength / EFI_PAGE_SIZE) + 1 :
+			(PayloadLength / EFI_PAGE_SIZE);
 
-		Print(L"Allocate memory at 0x%x\n", lk_elf32_phdr->p_paddr);
-		Print(L"Allocate 0x%x pages memory\n", LkLoadPages);
+		Print(L"Allocate memory at 0x%x\n", PayloadElf32Phdr->p_paddr);
+		Print(L"Allocate 0x%x pages memory\n", PayloadLoadPages);
 
-		Status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, LkLoadPages, &LkEntryPoint);
+		Status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, PayloadLoadPages, &LkEntryPoint);
 		if (EFI_ERROR(Status))
 		{
 			Print(L"Failed to allocate memory for ELF payload\n");
@@ -338,28 +324,28 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 		
 		/* Move LOAD section to actual location */
-		CopyMem((VOID*) (lk_elf32_phdr->p_paddr), LkLoadSec, load_section_length);
+		CopyMem((VOID*) (PayloadElf32Phdr->p_paddr), PayloadLoadSec, PayloadLength);
 		Print(L"Memory copied!\n");
 
 		/* Jump to LOAD section entry point and never returns */
-		Print(L"\nJump to address 0x%x\n", lk_elf32_phdr->p_paddr);
+		Print(L"\nJump to address 0x%x\n", PayloadElf32Phdr->p_paddr);
 
 #if _DEBUG_INSPECT_
 		gBS->Stall(SECONDS_TO_MICROSECONDS(5));
 #endif
-		JumpToAddress(ImageHandle, lk_elf32_phdr->p_paddr);
+		JumpToAddress(ImageHandle, PayloadElf32Phdr->p_paddr);
 
 		local_cleanup_file_pool:
-		gBS->FreePool(LkFileBuffer);
+		gBS->FreePool(PayloadFileBuffer);
 
 		local_cleanup_free_info:
-		gBS->FreePool((VOID *) LkFileInformation);
+		gBS->FreePool((VOID *) PayloadFileInformation);
 
 		local_cleanup:
-		Status = LkFileProtocol->Close(LkFileProtocol);
+		Status = PayloadFileProtocol->Close(PayloadFileProtocol);
 		if (EFI_ERROR(Status))
 		{
-			Print(L"Failed to close LK image: %r\n", Status);
+			Print(L"Failed to close Payload image: %r\n", Status);
 		}
 
 		break;

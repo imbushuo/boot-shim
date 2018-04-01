@@ -56,6 +56,9 @@
     <ClInclude Include="..\..\include\lk.h">
       <Filter>Header Files\Application</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\EFIApp.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\BlApplicationEntry.c">

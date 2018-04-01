@@ -148,6 +148,7 @@
     <ClInclude Include="..\..\include\application.h" />
     <ClInclude Include="..\..\include\bl.h" />
     <ClInclude Include="..\..\include\context.h" />
+    <ClInclude Include="..\..\include\EFIApp.h" />
     <ClInclude Include="..\..\include\elf.h" />
     <ClInclude Include="..\..\include\lk.h" />
     <ClInclude Include="..\..\include\ntstatus.h" />
