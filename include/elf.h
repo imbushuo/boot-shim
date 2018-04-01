@@ -441,3 +441,16 @@ typedef struct elf64_note {
 	Elf64_Word n_descsz;	/* Content size */
 	Elf64_Word n_type;	/* Content type */
 } Elf64_Nhdr;
+
+/* Enum structure for ELF verification */
+typedef enum {
+	ClearToLoad,
+	ValidateAArch64,
+	InvalidMagic,
+	InvalidType,
+	InvalidEntry,
+	NoLoadSection,
+	InvalidFile,
+	InvalidArchitecture,
+	OtherError
+} ElfVerifierStatus;
