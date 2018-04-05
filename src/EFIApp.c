@@ -1,6 +1,9 @@
 #include "EFIApp.h"
 
-VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr)
+VOID JumpToAddress(
+	EFI_HANDLE ImageHandle, 
+	uint32_t addr
+)
 {
 
 	EFI_STATUS Status;
@@ -13,10 +16,20 @@ VOID JumpToAddress(EFI_HANDLE ImageHandle, uint32_t addr)
 	/* Entry */
 	VOID(*entry)() = (VOID*) addr;
 
-	gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DesSize, &DesVersion);
+	gBS->GetMemoryMap(
+		&MemMapSize, 
+		MemMap, 
+		&MapKey, 
+		&DesSize, 
+		&DesVersion
+	);
 
 	/* Shutdown */
-	Status = gBS->ExitBootServices(ImageHandle, MapKey);
+	Status = gBS->ExitBootServices(
+		ImageHandle, 
+		MapKey
+	);
+
 	if (EFI_ERROR(Status))
 	{
 		Print(L"Failed to exit BS\n");
@@ -65,7 +78,13 @@ BOOLEAN CheckElf32Header(Elf32_Ehdr* bl_elf_hdr)
 
 	// Sanity check: entry point and size
 	ElfEntryPoint = bl_elf_hdr->e_entry;
-	Status = gBS->AllocatePages(AllocateAddress, EfiBootServicesCode, 1, &ElfEntryPoint);
+	Status = gBS->AllocatePages(
+		AllocateAddress, 
+		EfiLoaderCode, 
+		1, 
+		&ElfEntryPoint
+	);
+
 	if (EFI_ERROR(Status))
 	{
 		Print(L"Fail: Invalid entry point\n");
@@ -73,7 +92,10 @@ BOOLEAN CheckElf32Header(Elf32_Ehdr* bl_elf_hdr)
 	}
 
 	// Free page allocated
-	gBS->FreePages(ElfEntryPoint, 1);
+	gBS->FreePages(
+		ElfEntryPoint, 
+		1
+	);
 
 	// Sanity check: program header entries. At least one should present.
 	if (bl_elf_hdr->e_phnum < 1)
@@ -87,7 +109,10 @@ BOOLEAN CheckElf32Header(Elf32_Ehdr* bl_elf_hdr)
 
 // This is the actual entrypoint.
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS efi_main(
+	EFI_HANDLE ImageHandle, 
+	EFI_SYSTEM_TABLE *SystemTable
+)
 {
 
 	EFI_STATUS Status = EFI_SUCCESS;
@@ -116,7 +141,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN PayloadLength = 0;
 
 #if defined(_GNU_EFI)
-	InitializeLib(ImageHandle, SystemTable);
+	InitializeLib(
+		ImageHandle, 
+		SystemTable
+	);
 #endif
 
 	// Load emmc_appsboot.mbn
@@ -125,7 +153,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		&gEfiSimpleFileSystemProtocolGuid,
 		NULL,
 		&NumHandles,
-		&SfsHandles);
+		&SfsHandles
+	);
 
 	if (EFI_ERROR(Status))
 	{
@@ -184,16 +213,23 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		if (Status == EFI_BUFFER_TOO_SMALL)
 		{
-			Status = gBS->AllocatePool(EfiBootServicesData, PayloadFileInformationSize, &PayloadFileInformation);
+			Status = gBS->AllocatePool(
+				EfiLoaderData, 
+				PayloadFileInformationSize, 
+				&PayloadFileInformation
+			);
+
 			if (EFI_ERROR(Status))
 			{
 				Print(L"Failed to allocate pool for file info: %r\n", Status);
 				goto local_cleanup;
 			}
 
-			SetMem((VOID *) PayloadFileInformation, 
+			SetMem(
+				(VOID *) PayloadFileInformation, 
 				PayloadFileInformationSize, 
-				0xFF);
+				0xFF
+			);
 
 			Status = PayloadFileProtocol->GetInfo(
 				PayloadFileProtocol,
@@ -219,7 +255,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		PayloadFileBufferSize = (UINTN) PayloadFileInformation->FileSize;
 
 		/* Allocate pool for reading file */
-		Status = gBS->AllocatePool(EfiLoaderData, PayloadFileBufferSize, &PayloadFileBuffer);
+		Status = gBS->AllocatePool(
+			EfiLoaderData, 
+			PayloadFileBufferSize, 
+			&PayloadFileBuffer
+		);
 
 		if (EFI_ERROR(Status))
 		{
@@ -227,7 +267,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			goto local_cleanup_free_info;
 		}
 
-		SetMem(PayloadFileBuffer,
+		SetMem(
+			PayloadFileBuffer,
 			PayloadFileBufferSize,
 			0xFF);
 
@@ -325,24 +366,49 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"Allocate memory at 0x%x\n", PayloadElf32Phdr->p_paddr);
 		Print(L"Allocate 0x%x pages memory\n", PayloadLoadPages);
 
-		Status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, PayloadLoadPages, &LkEntryPoint);
+		Status = gBS->AllocatePages(
+			AllocateAddress, 
+			EfiLoaderCode, 
+			PayloadLoadPages, 
+			&LkEntryPoint
+		);
+
 		if (EFI_ERROR(Status))
 		{
 			Print(L"Failed to allocate memory for ELF payload\n");
 			goto local_cleanup_file_pool;
 		}
+
+		/* Move LOAD section to actual location */
 		SetMem(
 			(VOID*) LkEntryPoint, 
 			PayloadLength, 
 			0xFF);
 		
-		/* Move LOAD section to actual location */
-		CopyMem((VOID*) (PayloadElf32Phdr->p_paddr), PayloadLoadSec, PayloadLength);
+		CopyMem(
+			(VOID*) LkEntryPoint, 
+			PayloadLoadSec, 
+			PayloadLength
+		);
+
 		Print(L"Memory copied!\n");
 
 		/* Jump to LOAD section entry point and never returns */
-		Print(L"\nJump to address 0x%x\n", PayloadElf32Phdr->p_paddr);
-		JumpToAddress(ImageHandle, PayloadElf32Phdr->p_paddr);
+		Print(L"\nJump to address 0x%x\n", LkEntryPoint);
+
+		/* Ensure loader is not located too high */
+		if (LkEntryPoint > UINT32_MAX)
+		{
+			Print(L"Loader located too high\n");
+			Status = EFI_INVALID_PARAMETER;
+			goto local_cleanup_file_pool;
+		}
+
+		/* Jump to address securely */
+		JumpToAddress(
+			ImageHandle, 
+			(uint32_t) LkEntryPoint
+		);
 
 		local_cleanup_file_pool:
 		gBS->FreePool(PayloadFileBuffer);
