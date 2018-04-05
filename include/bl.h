@@ -390,12 +390,33 @@ typedef struct _BL_MEMORY_DATA
 	unsigned long DescriptorOffset;
 } BL_MEMORY_DATA, *PBL_MEMORY_DATA;
 
+typedef struct _ARM_EXCEPTION_STATE
+{
+	unsigned int Control;
+	unsigned int Vbar;
+	unsigned int Reserved;
+	unsigned int Reserved2;
+	unsigned int IdSvcRW;
+} ARM_EXCEPTION_STATE, *PARM_EXCEPTION_STATE;
+
+typedef struct _ARM_MM_STATE
+{
+	char MpExtensions;
+	unsigned int HardwarePageDirectory;
+	unsigned int TTB_Config;
+	unsigned int SoftwarePageDirectory;
+	unsigned int *MappedHardwarePageDirectory;
+} ARM_MM_STATE, *PARM_MM_STATE;
+
 typedef struct _BL_FIRMWARE_DESCRIPTOR
 {
 	unsigned long Version;
 	unsigned long Unknown;
 	EFI_HANDLE ImageHandle;
 	EFI_SYSTEM_TABLE *SystemTable;
+	ARM_EXCEPTION_STATE ExceptionState;
+	ARM_MM_STATE MmState;
+	unsigned int InterruptState;
 } BL_FIRMWARE_DESCRIPTOR, *PBL_FIRMWARE_DESCRIPTOR;
 
 typedef struct _BL_MEMORY_DESCRIPTOR

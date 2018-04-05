@@ -11,8 +11,8 @@ NTSTATUS BlApplicationEntry(
 )
 {
 
-	// Get excited
-	PBL_LIBRARY_PARAMETERS pLibraryParam;
+	// Get excited now
+	PBL_LIBRARY_PARAMETERS	LibraryParams;
 	PBL_FIRMWARE_DESCRIPTOR FirmwareDescriptor;
 	uint32_t ParamPointer;
 
@@ -22,24 +22,20 @@ NTSTATUS BlApplicationEntry(
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	pLibraryParam = LibraryParameters;
+	LibraryParams = LibraryParameters;
 	ParamPointer = (uint32_t) BootAppParameters;
 	FirmwareDescriptor = (PBL_FIRMWARE_DESCRIPTOR) (ParamPointer + BootAppParameters->FirmwareParametersOffset);
 
-	int ptr3 = (int) pLibraryParam + pLibraryParam[1].HeapAllocationAttributes;
-	int ptr7 = *(DWORD *)(ptr3 + 56);
-
 	// Switch mode
-	SwitchToRealModeContext(ptr3, ptr7);
+	SwitchToRealModeContext(FirmwareDescriptor);
 
 	// Do what ever you want now
 	if (FirmwareDescriptor->SystemTable)
 	{
-		EFI_STATUS status = efi_main(FirmwareDescriptor->ImageHandle, FirmwareDescriptor->SystemTable);
-		if (status == EFI_SUCCESS)
-		{
-			FirmwareDescriptor->SystemTable->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
-		}
+		efi_main(
+			FirmwareDescriptor->ImageHandle, 
+			FirmwareDescriptor->SystemTable
+		);
 	}
 
 	// We are done
