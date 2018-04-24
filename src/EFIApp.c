@@ -329,8 +329,7 @@ EFI_STATUS efi_main(
 
 			if (PayloadElf32Phdr->p_filesz != PayloadElf32Phdr->p_memsz)
 			{
-				Print(L"LOAD section %d skipped due to inconsistent size\n", ph_idx);
-				continue;
+				Print(L"%ELOAD section %d size inconsistent; use with caution%N\n", ph_idx);
 			}
 
 			if (PayloadElf32Phdr->p_paddr != LkEntryPoint)
