@@ -4,9 +4,13 @@ CTRL_M_BIT      EQU     (1 << 0)
 CTRL_C_BIT      EQU     (1 << 2)
 CTRL_B_BIT      EQU     (1 << 7)
 CTRL_I_BIT      EQU     (1 << 12)
+CACHE_LINE		EQU		64
 
 	AREA s_ArmDeInitialize, CODE, READONLY, ARM
 	EXPORT ArmDeInitialize
+	EXPORT ArmCleanInvalidateCacheRange
+	EXPORT ArmCallSmcHardCoded
+	EXPORT ArmReadCntFrq
 
 ArmDeInitialize
 	; Disable Branch Prediction
@@ -34,7 +38,7 @@ Loop1
 	and		R12, R12, #7					; get those 3 bits alone
 	cmp		R12, #2
 	blt		Skip							; no cache or only instruction cache at this level
-	mcr		p15, 2, R10, c0, c0, 0			; write the Cache Size selection register (CSSELR) // OR in 1 for Instruction
+	mcr		p15, 2, R10, c0, c0, 0			; write the Cache Size selection register (CSSELR) ; OR in 1 for Instruction
 	isb										; isb to sync the change to the CacheSizeID reg
 	mrc		p15, 1, R12, c0, c0, 0			; reads current Cache Size ID register (CCSIDR)
 	and		R2, R12, #&7					; extract the line length field
@@ -91,5 +95,40 @@ Finished
 
 	; Return
 	bx		lr
+
+ArmCleanInvalidateCacheRange
+	; cache-ops.S @ lk
+	dsb
+	add 	r2, r0, r1						; Calculate the end address
+	bic 	r0, #(CACHE_LINE-1)				; Align start with cache line
+ArmCleanInvalidateCacheRange0
+	mcr		p15, 0, r0, c7, c14, 1			; Clean & invalidate cache to PoC by MVA
+	add		r0, r0, #CACHE_LINE
+	cmp 	r0, r2
+	blo		ArmCleanInvalidateCacheRange0
+
+	mov		r0, #0
+	dsb
+
+	bx		lr
+
+ArmCallSmcHardCoded
+    ; Load the SMC arguments values into the appropriate registers
+    ldr     r7, =0
+    ldr     r6, =0
+    ldr     r5, =0
+    ldr     r4, =0
+    ldr     r3, =0x50
+    ldr     r2, =0xA0000000
+    ldr     r1, =0x12
+    ldr     r0, =0x0200010f
+
+    smc     #0
+
+    bx      lr
+
+ArmReadCntFrq
+	mrc    p15, 0, r0, c14, c0, 0    ; Read CNTFRQ
+	bx     lr
 
 	END

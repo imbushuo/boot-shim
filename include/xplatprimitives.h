@@ -9,3 +9,7 @@ typedef int int32_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
 typedef long long int64_t;
+
+typedef uintptr_t addr_t;
+typedef uintptr_t vaddr_t;
+typedef uintptr_t paddr_t;

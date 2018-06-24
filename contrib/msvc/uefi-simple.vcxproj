@@ -152,7 +152,9 @@
     <ClInclude Include="..\..\include\elf.h" />
     <ClInclude Include="..\..\include\lk.h" />
     <ClInclude Include="..\..\include\ntstatus.h" />
+    <ClInclude Include="..\..\include\PCIe.h" />
     <ClInclude Include="..\..\include\ProcessorSupport.h" />
+    <ClInclude Include="..\..\include\scm.h" />
     <ClInclude Include="..\..\include\suptypes.h" />
     <ClInclude Include="..\..\include\xplatprimitives.h" />
   </ItemGroup>

@@ -33,6 +33,9 @@
     <Filter Include="Source Files\BootApp">
       <UniqueIdentifier>{6545b30e-8bfb-457e-9ed6-bf13d743d0b7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Protocol">
+      <UniqueIdentifier>{91e5a9c3-073f-4d2e-9b35-324b932b95ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\elf.h">
@@ -64,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="..\..\include\EFIApp.h">
       <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\scm.h">
+      <Filter>Header Files\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\PCIe.h">
+      <Filter>Header Files\Protocol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
