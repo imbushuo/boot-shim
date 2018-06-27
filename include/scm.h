@@ -37,7 +37,7 @@ typedef struct {
 	uint64_t el1_x7;
 	uint64_t el1_x8;
 	uint64_t el1_elr;
-} el1_system_param;
+} EL1_SYSTEM_PARAM;
 
 enum
 {
@@ -45,7 +45,7 @@ enum
 	SMC_PARAM_TYPE_BUFFER_READ,
 	SMC_PARAM_TYPE_BUFFER_READWRITE,
 	SMC_PARAM_TYPE_BUFFER_VALIDATION,
-} scm_arg_type;
+} SCM_ARG_TYPE;
 
 #define SIP_SVC_CALLS                          0x02000000
 #define MAKE_SIP_SCM_CMD(svc_id, cmd_id)       ((((svc_id << 8) | (cmd_id)) & 0xFFFF) | SIP_SVC_CALLS)

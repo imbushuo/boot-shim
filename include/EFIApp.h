@@ -30,20 +30,15 @@
 
 #define GIC_DIST_CTRL               GIC_DIST_REG(0x000)
 
-BOOLEAN CheckElf64Header(Elf64_Ehdr * bl_elf_hdr);
+BOOLEAN CheckElf64Header(
+	Elf64_Ehdr * bl_elf_hdr
+);
+
 VOID JumpToAddressAArch64(
 	EFI_HANDLE ImageHandle,
 	EFI_PHYSICAL_ADDRESS Address,
 	VOID* PayloadBuffer,
 	UINT64 PayloadLength
-);
-
-VOID JumpToAddressAArch32(
-	EFI_HANDLE ImageHandle,
-	EFI_PHYSICAL_ADDRESS AArch32Address,
-	EFI_PHYSICAL_ADDRESS AArch64Address,
-	VOID* AArch64PayloadBuffer,
-	UINT64 AArch64PayloadLength
 );
 
 #endif

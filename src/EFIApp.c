@@ -18,10 +18,11 @@ VOID JumpToAddressAArch64(
 	UINT32 DesVersion = 0;
 	UINT32 PayloadAddress32 = (UINT32) Address;
 	UINT32 PayloadLength32 = (UINT32) PayloadLength;
-
 	EFI_PHYSICAL_ADDRESS DynamicEl1ParamAddress = 0xA0000000;
-	el1_system_param* DynamicEl1Param;
+	EL1_SYSTEM_PARAM* DynamicEl1Param;
 
+	// This is a bit hacky, but it can save me some time
+	// on the call convention.
 	Status = gBS->AllocatePages(
 		AllocateAddress,
 		EfiRuntimeServicesData,
@@ -92,73 +93,9 @@ VOID JumpToAddressAArch64(
 	while (TRUE) { }
 }
 
-VOID JumpToAddressAArch32(
-	EFI_HANDLE ImageHandle,
-	EFI_PHYSICAL_ADDRESS AArch32Address,
-	EFI_PHYSICAL_ADDRESS AArch64Address,
-	VOID* AArch64PayloadBuffer,
-	UINT64 AArch64PayloadLength
+BOOLEAN CheckElf64Header(
+	Elf64_Ehdr * bl_elf_hdr
 )
-{
-
-	EFI_STATUS Status;
-	UINTN MemMapSize = 0;
-	EFI_MEMORY_DESCRIPTOR* MemMap = 0;
-	UINTN MapKey = 0;
-	UINTN DesSize = 0;
-	UINT32 DesVersion = 0;
-	UINT32 PayloadAddress32 = (UINT32) AArch64Address;
-	UINT32 PayloadLength32 = (UINT32) AArch64PayloadLength;
-
-	/* Entry */
-	VOID(*entry)() = (VOID*) AArch32Address;
-
-	Print(L"Exiting boot services... \n");
-
-	gBS->GetMemoryMap(
-		&MemMapSize,
-		MemMap,
-		&MapKey,
-		&DesSize,
-		&DesVersion
-	);
-
-	/* Shutdown */
-	Status = gBS->ExitBootServices(
-		ImageHandle,
-		MapKey
-	);
-
-	if (EFI_ERROR(Status))
-	{
-		Print(L"Failed to exit BS\n");
-		return;
-	}
-
-	/* Move LOAD section to actual location */
-	SetMem(
-		(VOID*)PayloadAddress32,
-		PayloadLength32,
-		0xFF);
-
-	CopyMem(
-		(VOID*)PayloadAddress32,
-		AArch64PayloadBuffer,
-		PayloadLength32
-	);
-
-	/* De-initialize */
-	ArmDeInitialize();
-
-	/* Disable GIC */
-	writel(0, GIC_DIST_CTRL);
-
-	/* Lets go */
-	entry();
-
-}
-
-BOOLEAN CheckElf64Header(Elf64_Ehdr * bl_elf_hdr)
 {
 
 	EFI_PHYSICAL_ADDRESS ElfEntryPoint;
@@ -222,7 +159,9 @@ BOOLEAN CheckElf64Header(Elf64_Ehdr * bl_elf_hdr)
 	return TRUE;
 }
 
-static BOOLEAN PCIExpressIsPhyReady(VOID)
+static BOOLEAN PCIExpressIsPhyReady(
+	VOID
+)
 {
 	if (readl(MSM_PCIE_PHY + PCIE_PHY_PCS_STATUS) & BIT(6))
 		return FALSE;
@@ -326,7 +265,7 @@ EFI_STATUS efi_main(
 			continue;
 		}
 
-		// Read image and parse ELF32 file
+		// Read image and parse ELF64 file
 		Print(L"Opened payload image\n");
 
 		Status = PayloadFileProtocol->GetInfo(
