@@ -1,6 +1,7 @@
 #include "EFIApp.h"
 #include "scm.h"
 #include "PCIe.h"
+#include "PreloaderEnvironment.h"
 
 VOID JumpToAddressAArch64(
 	EFI_HANDLE ImageHandle, 
@@ -222,14 +223,6 @@ BOOLEAN CheckElf64Header(Elf64_Ehdr * bl_elf_hdr)
 	return TRUE;
 }
 
-static BOOLEAN PCIExpressIsPhyReady(VOID)
-{
-	if (readl(MSM_PCIE_PHY + PCIE_PHY_PCS_STATUS) & BIT(6))
-		return FALSE;
-	else
-		return TRUE;
-}
-
 // This is the actual entrypoint.
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
 EFI_STATUS efi_main(
@@ -253,17 +246,21 @@ EFI_STATUS efi_main(
 	UINTN PayloadFileBufferSize;
 	VOID* PayloadFileBuffer;
 	VOID* PayloadLoadSec;
-
 	EFI_FILE_INFO *PayloadFileInformation = NULL;
 	UINTN PayloadFileInformationSize = 0;
 
 	Elf64_Ehdr* PayloadElf64Ehdr = NULL;
 	Elf64_Phdr* PayloadElf64Phdr = NULL;
-
 	UINT64 PayloadSectionOffset = 0;
 	UINT64 PayloadLength = 0;
 
 	QCOM_PCIE_PROTOCOL *PCIExpressProtocol;
+
+	PRELOADER_ENVIRONMENT PreloaderEnv;
+	UINT32 PreloaderEnvCrc32;
+	UINTN VarSize;
+	VOID* PreloaderEnvFinalDest;
+	EFI_PHYSICAL_ADDRESS PreloaderEnvAddr = PRELOADER_ENV_ADDR;
 
 #if defined(_GNU_EFI)
 	InitializeLib(
@@ -272,7 +269,7 @@ EFI_STATUS efi_main(
 	);
 #endif
 
-	// Load emmc_appsboot.mbn
+	// Load UEFI
 	Status = gBS->LocateHandleBuffer(
 		ByProtocol,
 		&gEfiSimpleFileSystemProtocolGuid,
@@ -411,147 +408,177 @@ EFI_STATUS efi_main(
 		}
 
 		Print(L"Payload loaded into memory at 0x%x.\n", PayloadFileBuffer);
-
-		/* Check LK file */
-		PayloadElf64Ehdr = PayloadFileBuffer;
-		if (!CheckElf64Header(PayloadElf64Ehdr))
-		{
-			Print(L"Cannot load this LK image\n");
-			goto local_cleanup_file_pool;
-		}
-
-		/* Check overlapping */
-		if (PayloadElf64Ehdr->e_phoff < sizeof(Elf32_Ehdr))
-		{
-			Print(L"ELF header has overlapping\n");
-			goto local_cleanup_file_pool;
-		}
-
-		Print(L"Proceeded to Payload load\n");
-		PayloadElf64Phdr = (VOID*) (((UINTN) PayloadFileBuffer) + PayloadElf64Ehdr->e_phoff);
-		UefiEntryPoint = PayloadElf64Ehdr->e_entry;
-
-		Print(L"%d sections will be inspected.\n", PayloadElf64Ehdr->e_phnum);
-
-		/* Determine LOAD section */
-		for (UINTN ph_idx = 0; ph_idx < PayloadElf64Ehdr->e_phnum; ph_idx++)
-		{
-			PayloadElf64Phdr = (VOID*) (((UINTN)PayloadElf64Phdr) + (ph_idx * sizeof(Elf64_Phdr)));
-
-			/* Check if it is LOAD section */
-			if (PayloadElf64Phdr->p_type != PT_LOAD)
-			{
-				Print(L"Section %d skipped because it is not LOAD, it is 0x%x\n", ph_idx, PayloadElf64Phdr->p_type);
-				continue;
-			}
-
-			/* Sanity check: PA = VA, PA = entry_point, memory size = file size */
-			if (PayloadElf64Phdr->p_paddr != PayloadElf64Phdr->p_vaddr)
-			{
-				Print(L"LOAD section %d skipped due to identity mapping vioaltion\n", ph_idx);
-				continue;
-			}
-
-			if (PayloadElf64Phdr->p_filesz != PayloadElf64Phdr->p_memsz)
-			{
-				Print(L"%ELOAD section %d size inconsistent; use with caution%N\n", ph_idx);
-			}
-
-			if (PayloadElf64Phdr->p_paddr != UefiEntryPoint)
-			{
-				Print(L"LOAD section %d skipped due to entry point violation\n", ph_idx);
-				continue;
-			}
-
-			PayloadSectionOffset = PayloadElf64Phdr->p_offset;
-			PayloadLength = PayloadElf64Phdr->p_memsz;
-
-			/* Exit on the first result */
-			break;
-		}
-
-		if (PayloadSectionOffset == 0 || PayloadLength == 0)
-		{
-			Print(L"Unable to find suitable LOAD section\n");
-			goto local_cleanup_file_pool;
-		}
-
-		Print(L"ELF entry point = 0x%llx\n", PayloadElf64Phdr->p_paddr);
-		Print(L"ELF offset = 0x%llx\n", PayloadSectionOffset);
-		Print(L"ELF length = 0x%llx\n", PayloadLength);
-
-		PayloadLoadSec = (VOID*) (((UINTN) PayloadFileBuffer) + PayloadSectionOffset);
-
-		/* Ensure loader is not located too high */
-		if (UefiEntryPoint > UINT32_MAX)
-		{
-			Print(L"Loader located too high\n");
-			Status = EFI_INVALID_PARAMETER;
-			goto local_cleanup_file_pool;
-		}
-
-		/* Make sure PCIe is initialized */
-		Status = gBS->LocateProtocol(
-			&gQcomPcieInitProtocolGuid,
-			NULL,
-			(VOID**) &PCIExpressProtocol
-		);
-
-		ASSERT(Status == EFI_SUCCESS);
-		Status = PCIExpressProtocol->PCIeInitHardware(PCIExpressProtocol);
-		ASSERT(Status == EFI_SUCCESS);
-
-		Print(L"PCI Express initialized \n");
-
-		/* Check */
-		UINTN Retries = 0;
-		Print(L"Wait for PCIe PHY to be ready...");
-		do
-		{
-			Print(L"%d ", Retries);
-
-			if (PCIExpressIsPhyReady()) break;
-			Retries++;
-
-			gBS->Stall(REFCLK_STABILIZATION_DELAY_US_MIN);
-		} while (Retries < PHY_READY_TIMEOUT_COUNT);
-
-		Print(L"\n");
-
-		if (PCIExpressIsPhyReady())
-		{
-			Print(L"PCIe RC1 PHY is ready! \n");
-		}
-		else
-		{
-			Print(L"PCIe PHY RC1 failed to come up! \n");
-			while (TRUE) { }
-		}
-
-		/* Jump to LOAD section entry point and never returns */
-		Print(L"\nJump to address 0x%llx. See you in AArch64...\n", LkEntryPoint);
-
-		JumpToAddressAArch64(
-			ImageHandle,
-			UefiEntryPoint,
-			PayloadLoadSec,
-			PayloadLength
-		);
-
-		local_cleanup_file_pool:
-		gBS->FreePool(PayloadFileBuffer);
-
-		local_cleanup_free_info:
-		gBS->FreePool((VOID *) PayloadFileInformation);
-
-		local_cleanup:
-		Status = PayloadFileProtocol->Close(PayloadFileProtocol);
-		if (EFI_ERROR(Status))
-		{
-			Print(L"Failed to close Payload image: %r\n", Status);
-		}
-
 		break;
+	}
+
+	// Check UEFI file
+	if (PayloadFileBuffer == NULL) goto exit;
+	PayloadElf64Ehdr = PayloadFileBuffer;
+	if (!CheckElf64Header(PayloadElf64Ehdr))
+	{
+		Print(L"Cannot load this LK image\n");
+		goto local_cleanup_file_pool;
+	}
+
+	// Check overlapping
+	if (PayloadElf64Ehdr->e_phoff < sizeof(Elf32_Ehdr))
+	{
+		Print(L"ELF header has overlapping\n");
+		goto local_cleanup_file_pool;
+	}
+
+	Print(L"Proceeded to Payload load\n");
+	PayloadElf64Phdr = (VOID*)(((UINTN)PayloadFileBuffer) + PayloadElf64Ehdr->e_phoff);
+	UefiEntryPoint = PayloadElf64Ehdr->e_entry;
+
+	Print(L"%d sections will be inspected.\n", PayloadElf64Ehdr->e_phnum);
+
+	// Determine LOAD section
+	for (UINTN ph_idx = 0; ph_idx < PayloadElf64Ehdr->e_phnum; ph_idx++)
+	{
+		PayloadElf64Phdr = (VOID*)(((UINTN)PayloadElf64Phdr) + (ph_idx * sizeof(Elf64_Phdr)));
+
+		// Check if it is LOAD section
+		if (PayloadElf64Phdr->p_type != PT_LOAD)
+		{
+			Print(L"Section %d skipped because it is not LOAD, it is 0x%x\n", ph_idx, PayloadElf64Phdr->p_type);
+			continue;
+		}
+
+		// Sanity check: PA = VA, PA = entry_point, memory size = file size
+		if (PayloadElf64Phdr->p_paddr != PayloadElf64Phdr->p_vaddr)
+		{
+			Print(L"LOAD section %d skipped due to identity mapping vioaltion\n", ph_idx);
+			continue;
+		}
+
+		if (PayloadElf64Phdr->p_filesz != PayloadElf64Phdr->p_memsz)
+		{
+			Print(L"%ELOAD section %d size inconsistent; use with caution%N\n", ph_idx);
+		}
+
+		if (PayloadElf64Phdr->p_paddr != UefiEntryPoint)
+		{
+			Print(L"LOAD section %d skipped due to entry point violation\n", ph_idx);
+			continue;
+		}
+
+		PayloadSectionOffset = PayloadElf64Phdr->p_offset;
+		PayloadLength = PayloadElf64Phdr->p_memsz;
+
+		// Exit on the first result
+		break;
+	}
+
+	if (PayloadSectionOffset == 0 || PayloadLength == 0)
+	{
+		Print(L"Unable to find suitable LOAD section\n");
+		goto local_cleanup_file_pool;
+	}
+
+	Print(L"ELF entry point = 0x%llx\n", PayloadElf64Phdr->p_paddr);
+	Print(L"ELF offset = 0x%llx\n", PayloadSectionOffset);
+	Print(L"ELF length = 0x%llx\n", PayloadLength);
+
+	PayloadLoadSec = (VOID*)(((UINTN)PayloadFileBuffer) + PayloadSectionOffset);
+
+	// Ensure loader is not located too high
+	if (UefiEntryPoint > UINT32_MAX)
+	{
+		Print(L"Loader located too high\n");
+		Status = EFI_INVALID_PARAMETER;
+		goto local_cleanup_file_pool;
+	}
+
+	// Make sure PCIe is initialized
+	Status = gBS->LocateProtocol(
+		&gQcomPcieInitProtocolGuid,
+		NULL,
+		(VOID**)&PCIExpressProtocol
+	);
+
+	ASSERT(Status == EFI_SUCCESS);
+	Status = PCIExpressProtocol->PCIeInitHardware(PCIExpressProtocol);
+	ASSERT(Status == EFI_SUCCESS);
+
+	Print(L"PCI Express initialized \n");
+
+	// Configure environment HOB
+	PreloaderEnv.Header = PRELOADER_HEADER;
+	PreloaderEnv.PreloaderVersion = PRELOADER_VERSION;
+	CopyMem(PreloaderEnv.PreloaderRelease, PRELOADER_RELEASE, sizeof(PRELOADER_RELEASE));
+	Status = gRT->GetTime(&PreloaderEnv.BootTimeEpoch, NULL);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"Time retrieval failed \n");
+		goto exit;
+	}
+
+	VarSize = sizeof(PreloaderEnv.UefiDisplayInfo);
+	Status = gRT->GetVariable(
+		L"UEFIDisplayInfo",
+		&gEfiGraphicsOutputProtocolGuid,
+		NULL,
+		&VarSize,
+		&PreloaderEnv.UefiDisplayInfo
+	);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"Variable retrieval failed \n");
+		goto exit;
+	}
+
+	PreloaderEnv.Crc32 = 0x0;
+	Status = gBS->CalculateCrc32(
+		&PreloaderEnv, 
+		sizeof(PreloaderEnv), 
+		&PreloaderEnvCrc32
+	);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"CRC32 calc failed \n");
+		goto exit;
+	}
+	PreloaderEnv.Crc32 = PreloaderEnvCrc32;
+
+	// Relocate HOB
+	Status = gBS->AllocatePages(
+		AllocateAddress,
+		EfiLoaderData,
+		1,
+		&PreloaderEnvAddr
+	);
+
+	// Copy HOB for PEI pickup
+	if (EFI_ERROR(Status))
+	{
+		Print(L"Page allocation failed \n");
+		goto exit;
+	}
+
+	PreloaderEnvFinalDest = (VOID*)PreloaderEnvAddr;
+	CopyMem(PreloaderEnvFinalDest, &PreloaderEnv, sizeof(PreloaderEnv));
+
+	// Jump to LOAD section entry point and never returns
+	Print(L"\nJump to address 0x%llx. See you in AArch64...\n", LkEntryPoint);
+	JumpToAddressAArch64(
+		ImageHandle,
+		UefiEntryPoint,
+		PayloadLoadSec,
+		PayloadLength
+	);
+
+local_cleanup_file_pool:
+	gBS->FreePool(PayloadFileBuffer);
+
+local_cleanup_free_info:
+	gBS->FreePool((VOID *)PayloadFileInformation);
+
+local_cleanup:
+	Status = PayloadFileProtocol->Close(PayloadFileProtocol);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"Failed to close Payload image: %r\n", Status);
 	}
 
 exit:

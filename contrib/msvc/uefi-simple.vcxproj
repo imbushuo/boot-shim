@@ -159,6 +159,7 @@
     <ClInclude Include="..\..\include\xplatprimitives.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\PreloaderEnvironment.h" />
     <ClCompile Include="..\..\src\BlApplicationEntry.c" />
     <ClCompile Include="..\..\src\Context.c" />
     <ClCompile Include="..\..\src\EFIApp.c" />

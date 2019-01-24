@@ -74,6 +74,9 @@
     <ClInclude Include="..\..\include\PCIe.h">
       <Filter>Header Files\Protocol</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\PreloaderEnvironment.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\EFIApp.c">
