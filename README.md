@@ -1,12 +1,17 @@
-Boot Shim (ELF Variant)
+Boot Shim (UEFI Variant)
 =======================================
 
 Boot Shim is a small ARM32 Windows Boot Manager Application that intended to 
-chain-load any random ARM32 ELF applications on [hacked Lumias](http://wpinternals.net)
-or other UEFI/ARM32 Windows devices.
+chain-load ARM64 UEFI [hacked Lumias](http://wpinternals.net), and particularly Lumia 950/950 XL.
 
 It is based on [UEFI-Simple](https://github.com/pbatard/uefi-simple). 
 IDE-debugging is not supported.
+
+## For final-users
+
+You can download latest BootShim for UEFI chainload by clicking the Azure Pipelines button below.
+
+[![Build Status](https://dev.azure.com/LumiaWoA/Boot%20Shim/_apis/build/status/UEFI%20PreLoader%20Build?branchName=msm8994-pcie)](https://dev.azure.com/LumiaWoA/Boot%20Shim/_build/latest?definitionId=3&branchName=msm8994-pcie)
 
 ## Prerequisites
 
@@ -37,17 +42,3 @@ and select the ARM compilers and libraries there, as they do __NOT__ appear in
 the default _Workloads_ screen:
 
 ![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components2.png)
-
-## ELF requirements
-
-- There must be a LOAD section has `p_paddr` and `p_vaddr` matches program entry point address (`e_entry`).
-- LOAD section must have `p_paddr` equals to `p_vaddr` (identity mapping requirements).
-- LOAD section must reside in device's memory region. That means p_paddr must larger or equal (not likely) to 
-device's memory base, and `p_addr` + `p_memsz` must not go out of device's memory region.
-- LOAD section must have `p_memsz` equals to `p_filesz`.
-- Only first LOAD section that meets these requirements will be loaded into memory.
-- `e_machine` must be `EM_ARM`.
-- `e_type` must be `ET_EXEC`.
-- Has name of `emmc_appsboot.mbn` in a firmware-recognized partition (it will try all partitions and use the first one available)
-
-Little Kernel (aboot) signed variants meet these requirements.
