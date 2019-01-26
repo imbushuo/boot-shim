@@ -2,7 +2,7 @@ trigger:
 - msm8994-pcie
 
 pool:
-  vmImage: 'VS2017-Win2016'
+  name: default
 
 variables:
   solution: '**/*.sln'
