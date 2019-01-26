@@ -2,7 +2,7 @@ trigger:
 - msm8994-pcie
 
 pool:
-  name: default
+  name: Default
 
 variables:
   solution: '**/*.sln'
