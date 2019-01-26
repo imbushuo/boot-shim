@@ -13,6 +13,9 @@ steps:
 - checkout: self
   submodules: true
 
+- script: certutil -f -importpfx "C:\Program Files (x86)\Windows Kits\10\Tools\certificates\OEM_Test_Cert_2017.pfx"
+  displayName: Install certificate
+
 - task: VSBuild@1
   displayName: Build solution
   inputs:
