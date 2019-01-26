@@ -98,7 +98,7 @@
       <Message>Generate ARM32 support assembly object</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
+      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sm /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Sign binaries</Message>
@@ -134,7 +134,7 @@
       <AdditionalOptions>/SUBSYSTEM:BOOT_APPLICATION %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
+      <Command>signtool.exe sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sm /sha1 5d7630097be5bdb731fc40cd4998b69914d82ead $(OutDir)*.efi</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Sign binaries</Message>
