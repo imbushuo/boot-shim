@@ -24,4 +24,4 @@ steps:
   displayName: Publish build artifacts
   inputs:
     pathtoPublish: build/BootShim
-    artifactName: MSM8992/MSM8994 UEFI Loader
+    artifactName: UEFI Loader for 8992 and 8994
