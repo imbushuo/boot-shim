@@ -1,0 +1,21 @@
+trigger:
+- msm8994-pcie
+
+pool:
+  name: Default
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'arm'
+  buildConfiguration: 'Debug'
+
+steps:
+- checkout: self
+  submodules: true
+
+- task: VSBuild@1
+  displayName: Build solution
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
