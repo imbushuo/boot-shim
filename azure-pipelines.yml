@@ -1,0 +1,19 @@
+trigger:
+- msm8994-pcie
+
+pool:
+  vmImage: 'VS2017-Win2016'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'arm'
+  buildConfiguration: 'Debug'
+
+steps:
+- task: VSBuild@1
+  displayName: Build solution
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
