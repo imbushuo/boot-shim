@@ -528,6 +528,10 @@ EFI_STATUS efi_main(
 		goto exit;
 	}
 
+	PreloaderEnv.BootMode = BOOT_MODE_PSCI;
+	PreloaderEnv.EnablePlatformSdCardBoot = 1;
+	PreloaderEnv.UseQuadCoreConfiguration = 0;
+
 	PreloaderEnv.Crc32 = 0x0;
 	Status = gBS->CalculateCrc32(
 		&PreloaderEnv, 
