@@ -256,7 +256,7 @@ EFI_STATUS efi_main(
 
 	QCOM_PCIE_PROTOCOL *PCIExpressProtocol;
 
-	PRELOADER_ENVIRONMENT PreloaderEnv;
+	PRELOADER_ENVIRONMENT_VERSION_2 PreloaderEnv;
 	UINT32 PreloaderEnvCrc32;
 	UINTN VarSize;
 	VOID* PreloaderEnvFinalDest;
@@ -533,9 +533,11 @@ EFI_STATUS efi_main(
 	PreloaderEnv.UseQuadCoreConfiguration = 0;
 
 	PreloaderEnv.Crc32 = 0x0;
+	PreloaderEnv.Crc32v2 = 0x0;
+
 	Status = gBS->CalculateCrc32(
 		&PreloaderEnv, 
-		sizeof(PreloaderEnv), 
+		sizeof(PRELOADER_ENVIRONMENT_VERSION_1),
 		&PreloaderEnvCrc32
 	);
 	if (EFI_ERROR(Status))
@@ -544,6 +546,18 @@ EFI_STATUS efi_main(
 		goto exit;
 	}
 	PreloaderEnv.Crc32 = PreloaderEnvCrc32;
+
+	Status = gBS->CalculateCrc32(
+		&PreloaderEnv,
+		sizeof(PreloaderEnv),
+		&PreloaderEnvCrc32
+	);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"CRC32v2 calc failed \n");
+		goto exit;
+	}
+	PreloaderEnv.Crc32v2 = PreloaderEnvCrc32;
 
 	// Relocate HOB
 	Status = gBS->AllocatePages(
