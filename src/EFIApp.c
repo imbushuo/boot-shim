@@ -2,6 +2,8 @@
 #include "scm.h"
 #include "PCIe.h"
 #include "PreloaderEnvironment.h"
+#include "BlBootConfiguration.h"
+#include "application.h"
 
 VOID JumpToAddressAArch64(
 	EFI_HANDLE ImageHandle, 
@@ -230,7 +232,15 @@ EFI_STATUS efi_main(
 	EFI_SYSTEM_TABLE *SystemTable
 )
 {
+	return EFIApp_Main(ImageHandle, SystemTable, NULL);
+}
 
+EFI_STATUS EFIApp_Main(
+	EFI_HANDLE ImageHandle,
+	EFI_SYSTEM_TABLE* SystemTable,
+	PBOOT_APPLICATION_PARAMETER_BLOCK BootAppParameters
+)
+{
 	EFI_STATUS Status = EFI_SUCCESS;
 	
 	UINTN NumHandles = 0;
@@ -261,6 +271,10 @@ EFI_STATUS efi_main(
 	UINTN VarSize;
 	VOID* PreloaderEnvFinalDest;
 	EFI_PHYSICAL_ADDRESS PreloaderEnvAddr = PRELOADER_ENV_ADDR;
+
+	BL_LOADED_APPLICATION_ENTRY BlpApplicationEntry;
+	UINT64 BcdIntegerValue = 0;
+	BOOLEAN BcdBoolValue = FALSE;
 
 #if defined(_GNU_EFI)
 	InitializeLib(
@@ -531,6 +545,42 @@ EFI_STATUS efi_main(
 	PreloaderEnv.BootMode = BOOT_MODE_PSCI;
 	PreloaderEnv.EnablePlatformSdCardBoot = 1;
 	PreloaderEnv.UseQuadCoreConfiguration = 0;
+
+	if (BootAppParameters != NULL)
+	{
+		BlGetLoadedApplicationEntry(BootAppParameters,
+			&BlpApplicationEntry);
+
+		// Boot mode
+		Status = BlGetBootOptionInteger(BlpApplicationEntry.BcdData,
+			0x25133701,
+			(UINT64*)&BcdIntegerValue);
+		if (!EFI_ERROR(Status))
+		{
+			if (BcdIntegerValue >= 0 && BcdIntegerValue < BOOT_MODE_MAX)
+			{
+				PreloaderEnv.BootMode = (UINT32)BcdIntegerValue;
+			}
+		}
+
+		// Sd card support
+		Status = BlGetBootOptionBoolean(BlpApplicationEntry.BcdData,
+			0x26133701,
+			(BOOLEAN*)&BcdBoolValue);
+		if (!EFI_ERROR(Status))
+		{
+			PreloaderEnv.EnablePlatformSdCardBoot = BcdBoolValue;
+		}
+
+		// Force Quad Core for MPPARK EL2
+		Status = BlGetBootOptionBoolean(BlpApplicationEntry.BcdData,
+			0x26133702,
+			(BOOLEAN*)&BcdBoolValue);
+		if (!EFI_ERROR(Status))
+		{
+			PreloaderEnv.UseQuadCoreConfiguration = BcdBoolValue;
+		}
+	}
 
 	PreloaderEnv.Crc32 = 0x0;
 	PreloaderEnv.Crc32v2 = 0x0;

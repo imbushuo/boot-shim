@@ -32,9 +32,10 @@ NTSTATUS BlApplicationEntry(
 	// Do what ever you want now
 	if (FirmwareDescriptor->SystemTable)
 	{
-		efi_main(
-			FirmwareDescriptor->ImageHandle, 
-			FirmwareDescriptor->SystemTable
+		EFIApp_Main(
+			FirmwareDescriptor->ImageHandle,
+			FirmwareDescriptor->SystemTable,
+			BootAppParameters
 		);
 	}
 

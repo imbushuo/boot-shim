@@ -157,10 +157,12 @@
     <ClInclude Include="..\..\include\scm.h" />
     <ClInclude Include="..\..\include\suptypes.h" />
     <ClInclude Include="..\..\include\xplatprimitives.h" />
+    <ClInclude Include="..\..\include\BlBootConfiguration.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\PreloaderEnvironment.h" />
     <ClCompile Include="..\..\src\BlApplicationEntry.c" />
+    <ClCompile Include="..\..\src\BlBootConfiguration.c" />
     <ClCompile Include="..\..\src\Context.c" />
     <ClCompile Include="..\..\src\EFIApp.c" />
   </ItemGroup>
