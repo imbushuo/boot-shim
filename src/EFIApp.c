@@ -2,6 +2,8 @@
 #include "scm.h"
 #include "PCIe.h"
 #include "PreloaderEnvironment.h"
+#include "BlBootConfiguration.h"
+#include "application.h"
 
 VOID JumpToAddressAArch64(
 	EFI_HANDLE ImageHandle, 
@@ -230,7 +232,15 @@ EFI_STATUS efi_main(
 	EFI_SYSTEM_TABLE *SystemTable
 )
 {
+	return EFIApp_Main(ImageHandle, SystemTable, NULL);
+}
 
+EFI_STATUS EFIApp_Main(
+	EFI_HANDLE ImageHandle,
+	EFI_SYSTEM_TABLE* SystemTable,
+	PBOOT_APPLICATION_PARAMETER_BLOCK BootAppParameters
+)
+{
 	EFI_STATUS Status = EFI_SUCCESS;
 	
 	UINTN NumHandles = 0;
@@ -256,11 +266,15 @@ EFI_STATUS efi_main(
 
 	QCOM_PCIE_PROTOCOL *PCIExpressProtocol;
 
-	PRELOADER_ENVIRONMENT PreloaderEnv;
+	PRELOADER_ENVIRONMENT_VERSION_2 PreloaderEnv;
 	UINT32 PreloaderEnvCrc32;
 	UINTN VarSize;
 	VOID* PreloaderEnvFinalDest;
 	EFI_PHYSICAL_ADDRESS PreloaderEnvAddr = PRELOADER_ENV_ADDR;
+
+	BL_LOADED_APPLICATION_ENTRY BlpApplicationEntry;
+	UINT64 BcdIntegerValue = 0;
+	BOOLEAN BcdBoolValue = FALSE;
 
 #if defined(_GNU_EFI)
 	InitializeLib(
@@ -528,10 +542,52 @@ EFI_STATUS efi_main(
 		goto exit;
 	}
 
+	PreloaderEnv.BootMode = BOOT_MODE_PSCI;
+	PreloaderEnv.EnablePlatformSdCardBoot = 1;
+	PreloaderEnv.UseQuadCoreConfiguration = 0;
+
+	if (BootAppParameters != NULL)
+	{
+		BlGetLoadedApplicationEntry(BootAppParameters,
+			&BlpApplicationEntry);
+
+		// Boot mode
+		Status = BlGetBootOptionInteger(BlpApplicationEntry.BcdData,
+			0x25133701,
+			(UINT64*)&BcdIntegerValue);
+		if (!EFI_ERROR(Status))
+		{
+			if (BcdIntegerValue >= 0 && BcdIntegerValue < BOOT_MODE_MAX)
+			{
+				PreloaderEnv.BootMode = (UINT32)BcdIntegerValue;
+			}
+		}
+
+		// Sd card support
+		Status = BlGetBootOptionBoolean(BlpApplicationEntry.BcdData,
+			0x26133701,
+			(BOOLEAN*)&BcdBoolValue);
+		if (!EFI_ERROR(Status))
+		{
+			PreloaderEnv.EnablePlatformSdCardBoot = BcdBoolValue;
+		}
+
+		// Force Quad Core for MPPARK EL2
+		Status = BlGetBootOptionBoolean(BlpApplicationEntry.BcdData,
+			0x26133702,
+			(BOOLEAN*)&BcdBoolValue);
+		if (!EFI_ERROR(Status))
+		{
+			PreloaderEnv.UseQuadCoreConfiguration = BcdBoolValue;
+		}
+	}
+
 	PreloaderEnv.Crc32 = 0x0;
+	PreloaderEnv.Crc32v2 = 0x0;
+
 	Status = gBS->CalculateCrc32(
 		&PreloaderEnv, 
-		sizeof(PreloaderEnv), 
+		sizeof(PRELOADER_ENVIRONMENT_VERSION_1),
 		&PreloaderEnvCrc32
 	);
 	if (EFI_ERROR(Status))
@@ -540,6 +596,18 @@ EFI_STATUS efi_main(
 		goto exit;
 	}
 	PreloaderEnv.Crc32 = PreloaderEnvCrc32;
+
+	Status = gBS->CalculateCrc32(
+		&PreloaderEnv,
+		sizeof(PreloaderEnv),
+		&PreloaderEnvCrc32
+	);
+	if (EFI_ERROR(Status))
+	{
+		Print(L"CRC32v2 calc failed \n");
+		goto exit;
+	}
+	PreloaderEnv.Crc32v2 = PreloaderEnvCrc32;
 
 	// Relocate HOB
 	Status = gBS->AllocatePages(

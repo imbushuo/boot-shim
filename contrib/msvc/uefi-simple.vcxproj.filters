@@ -77,6 +77,9 @@
     <ClInclude Include="..\..\include\PreloaderEnvironment.h">
       <Filter>Header Files\Application</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\BlBootConfiguration.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\EFIApp.c">
@@ -86,6 +89,9 @@
       <Filter>Source Files\BootApp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\BlApplicationEntry.c">
+      <Filter>Source Files\BootApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\BlBootConfiguration.c">
       <Filter>Source Files\BootApp</Filter>
     </ClCompile>
   </ItemGroup>
